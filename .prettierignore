@@ -4,3 +4,4 @@ package-lock.json
 .worktrees
 **/public/assets/atlas.json
 .superpowers
+templates/game/README.md

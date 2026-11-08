@@ -1,0 +1,62 @@
+# Starter art. Palette chars cannot be '#'.
+palette
+. transparent
+k #1a1c2c
+b #3b5dc9
+c #41a6f6
+w #f4f4f4
+y #ffcd75
+o #ef7d57
+
+sprite player
+....kkkk....
+...kccccck..
+..kccccccck.
+..kcwkcwkck.
+..kccccccck.
+...kcccccck.
+..kkbbbbbkk.
+.kcckbbbkcck
+.kcckbbbkcck
+..kk.bbb.kk.
+....kb.bk...
+....kk.kk...
+end
+
+sprite coin
+..kkkk..
+.kyyyyk.
+kyywwyyk
+kywyyyok
+kywyyyok
+kyyyyyok
+.kyoook.
+..kkkk..
+end
+
+sprite thumbnail
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkcccccckkkkkkkkkkkooooookkkkkkkk
+kkkkkkkkkcccccckkkkkkkkkkkowyyyokkkkkkkk
+kkkkkkkkkccwcwckkkkkkkkkkkoyyyyokkkkkkkk
+kkkkkkkkkcccccckkkkkkkkkkkoyyyyokkkkkkkk
+kkkkkkkkkcccccckkkkkkkkkkkoyyyyokkkkkkkk
+kkkkkkkkkcccccckkkkkkkkkkkooooookkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+bkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbk
+kbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkb
+bkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbk
+kbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkb
+bkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbkbk
+end

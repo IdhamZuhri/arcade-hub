@@ -1,0 +1,8 @@
+{
+  "id": "__ID__",
+  "title": "__TITLE__",
+  "description": "__TITLE__: a small pixel arcade game.",
+  "thumbnail": "public/thumbnail.png",
+  "author": "__OWNER__",
+  "owner": "__OWNER__"
+}
