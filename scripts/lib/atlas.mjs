@@ -17,23 +17,31 @@ export function parseSprites(text) {
   lines.forEach((raw, i) => {
     const line = raw.trim();
     const lineNo = i + 1;
-    if (line === '' || line.startsWith('#')) return;
+    if (line === '') return;
+    // Inside a sprite block every line is a pixel row ('#' is not special).
     if (mode === 'sprite') {
       if (line === 'end') {
         sprites.push(current);
         current = null;
         mode = 'none';
-        return;
-      }
-      current.rows.push(line);
+      } else current.rows.push(line);
       return;
     }
+    if (mode === 'palette' && /^#\s+(transparent|#[0-9a-fA-F]{6})$/.test(line)) {
+      throw new Error(
+        `line ${lineNo}: '#' is reserved for comments and cannot be a palette character`,
+      );
+    }
+    if (line.startsWith('#')) return;
     if (line === 'palette') {
       mode = 'palette';
       return;
     }
     const sm = /^sprite\s+(\S+)$/.exec(line);
     if (sm) {
+      if (sprites.some((x) => x.name === sm[1])) {
+        throw new Error(`line ${lineNo}: duplicate sprite name '${sm[1]}'`);
+      }
       current = { name: sm[1], w: 0, h: 0, rows: [] };
       mode = 'sprite';
       return;

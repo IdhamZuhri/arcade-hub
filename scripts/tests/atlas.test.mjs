@@ -90,3 +90,24 @@ test('phaser json mirrors packed frames', () => {
   expect(json.frames['hero-0'].frame).toEqual(packed.frames['hero-0']);
   expect(json.meta.image).toBe('atlas.png');
 });
+
+test('a sprite row starting with # is a pixel row, not a comment', () => {
+  const bad = SAMPLE.replace('kyyk', '#..#');
+  expect(() => parseSprites(bad)).toThrow(/unknown colour '#'/);
+});
+
+test('# cannot be a palette character', () => {
+  expect(() => parseSprites(SAMPLE.replace('k #1a1c2c', '# #1a1c2c'))).toThrow(/#/);
+});
+
+test('duplicate sprite names are rejected', () => {
+  const dup = `${SAMPLE}sprite hero-0\n.kk.\nend\n`;
+  expect(() => parseSprites(dup)).toThrow(/duplicate.*hero-0/);
+});
+
+test('CRLF input with blanks and comments parses like LF', () => {
+  const lf = `# top\n\npalette\n. transparent\nk #1a1c2c\n\n# mid\nsprite a\nk.\nend\n\n# tail\n`;
+  const crlf = lf.replace(/\n/g, '\r\n');
+  expect(parseSprites(crlf)).toEqual(parseSprites(lf));
+  expect(parseSprites(crlf).sprites).toHaveLength(1);
+});
