@@ -10,7 +10,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   init(data: { score: number }): void {
-    this.score = data.score ?? 0;
+    this.score = data?.score ?? 0;
   }
 
   create(): void {

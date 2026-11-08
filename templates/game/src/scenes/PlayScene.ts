@@ -21,7 +21,7 @@ export class PlayScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>;
   private touch: DirectionTouch = null;
-  private rand = mulberry32(Date.now());
+  private rand: () => number = mulberry32(0);
   private score = 0;
   private timeLeft = ROUND_SECONDS;
   private hud!: Phaser.GameObjects.Text;
@@ -32,6 +32,7 @@ export class PlayScene extends Phaser.Scene {
 
   create(): void {
     this.world = new World();
+    this.rand = mulberry32(Date.now());
     this.sprites = new Map();
     this.score = 0;
     this.timeLeft = ROUND_SECONDS;
