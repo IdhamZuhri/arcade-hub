@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "lint": "eslint . && prettier --check . && node scripts/check-boundaries.mjs",
+    "new-game": "node scripts/new-game.mjs",
     "dev:hub": "npm run dev -w apps/hub",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",
