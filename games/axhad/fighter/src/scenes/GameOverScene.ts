@@ -4,19 +4,23 @@ import { GAME_ID, SCENES, WIDTH, HEIGHT } from '../config/game';
 
 export class GameOverScene extends Phaser.Scene {
   private score = 0;
+  private won = false;
 
   constructor() {
     super(SCENES.GameOver);
   }
 
-  init(data: { score: number }): void {
+  init(data: { score: number; won: boolean }): void {
     this.score = data?.score ?? 0;
+    this.won = data?.won ?? false;
   }
 
   create(): void {
     const { best, isNew } = recordScore(GAME_ID, this.score);
     const style = { fontSize: '10px', color: '#ffffff' };
-    this.add.text(WIDTH / 2, 40, 'GAME OVER', { ...style, fontSize: '20px' }).setOrigin(0.5);
+    this.add
+      .text(WIDTH / 2, 40, this.won ? 'YOU WIN' : 'YOU LOSE', { ...style, fontSize: '20px' })
+      .setOrigin(0.5);
     this.add.text(WIDTH / 2, 80, `SCORE ${this.score}`, style).setOrigin(0.5);
     this.add.text(WIDTH / 2, 95, `BEST ${best}`, style).setOrigin(0.5);
     if (isNew) {

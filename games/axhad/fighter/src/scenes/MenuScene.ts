@@ -12,7 +12,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(WIDTH / 2, 50, TITLE, { ...style, fontSize: '20px' }).setOrigin(0.5);
     this.add.text(WIDTH / 2, 85, `BEST ${loadHighScore(GAME_ID)}`, style).setOrigin(0.5);
     this.add
-      .text(WIDTH / 2, HEIGHT - 50, 'SPACE / ENTER / TAP to start\nArrows or WASD to move', {
+      .text(WIDTH / 2, HEIGHT - 50, 'SPACE / ENTER / TAP to start\nA/D move · J punch · K block', {
         ...style,
         align: 'center',
       })

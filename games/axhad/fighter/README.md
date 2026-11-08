@@ -1,10 +1,13 @@
 # Fighter
 
-A pixel arcade game by axhad (`axhad-fighter`).
+Pixel Brawl: a 1v1 pixel fighting game by axhad (`axhad-fighter`).
 
 ## Controls
 
-- Move: arrow keys or WASD (touch d-pad on touch devices)
+- Move: A/D or arrow keys (touch: < > buttons)
+- Punch: J (touch: PUNCH)
+- Block: K (touch: BLOCK); no moving or punching while blocking
+- Best of 3 rounds vs the CPU, tougher each round
 - Start / play again: SPACE, ENTER or tap
 - Menu from game over: M
 
