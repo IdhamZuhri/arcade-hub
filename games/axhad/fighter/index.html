@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Pixel Brawl</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0e0e1a;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+      .back {
+        color: #9aa5ce;
+        font: 14px monospace;
+        padding: 8px 12px;
+        text-decoration: none;
+      }
+      #game {
+        flex: 1;
+        min-height: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back" href="../../../">← Back to arcade</a>
+    <div id="game"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
