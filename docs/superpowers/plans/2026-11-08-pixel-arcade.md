@@ -34,24 +34,24 @@
 
 Create each branch in a git worktree under `.worktrees/`, which is gitignored (use superpowers:using-git-worktrees). Run `npm install` in each new worktree. After a branch's tasks pass review and verification, merge it into `main` locally with `--no-ff`, then start the next branch from the updated `main`.
 
-| Branch | Tasks |
-|---|---|
-| `tooling/root-setup` | 1 |
-| `shared/helpers` | 2 |
-| `tooling/atlas` | 3 |
-| `hub/launcher` | 4 |
-| `tooling/template-scaffold` | 5, 6, 7 |
-| `game/idham-rpg/placeholder` | 8, 9 |
-| `game/axhad-fighter/placeholder` | 10, 11 |
-| `tooling/github-docs` | 12, 13 |
+| Branch                           | Tasks   |
+| -------------------------------- | ------- |
+| `tooling/root-setup`             | 1       |
+| `shared/helpers`                 | 2       |
+| `tooling/atlas`                  | 3       |
+| `hub/launcher`                   | 4       |
+| `tooling/template-scaffold`      | 5, 6, 7 |
+| `game/idham-rpg/placeholder`     | 8, 9    |
+| `game/axhad-fighter/placeholder` | 10, 11  |
+| `tooling/github-docs`            | 12, 13  |
 
 ## Review Focus
 
-1. **Blocked or corrupt localStorage** (private mode, quota exceeded, values like `"NaN"`, `"-5"`, `"1e400"`, `"12.7"`): the high score reads as 0 or the floored valid integer, a failed write is silently skipped, and the game keeps running. *Tests are in Task 2.*
-2. **A bad `game.json`** (missing field, wrong `id`, wrong `owner`, missing thumbnail file): the hub build fails with a message naming the file, rather than rendering a broken card. *Tests are in Task 4.*
-3. **Windows backslash paths** in the boundary check and scaffold: a Windows path like `games\idham\rpg\src\a.ts` must be judged exactly as the POSIX path would be. *Tests are in Task 1 and Task 6.*
-4. **A long frame after a backgrounded tab** (delta ≥ 1000 ms): entities must not tunnel through walls and timers must not jump. `clampDt` caps dt at 0.1 s. *Tests are in Task 5.*
-5. **Bad scaffold input** (`RPG`, `../x`, `-x`, an unknown owner, a game that already exists): the script refuses with a message, exits 1, and creates no files. *Tests are in Task 6.*
+1. **Blocked or corrupt localStorage** (private mode, quota exceeded, values like `"NaN"`, `"-5"`, `"1e400"`, `"12.7"`): the high score reads as 0 or the floored valid integer, a failed write is silently skipped, and the game keeps running. _Tests are in Task 2._
+2. **A bad `game.json`** (missing field, wrong `id`, wrong `owner`, missing thumbnail file): the hub build fails with a message naming the file, rather than rendering a broken card. _Tests are in Task 4._
+3. **Windows backslash paths** in the boundary check and scaffold: a Windows path like `games\idham\rpg\src\a.ts` must be judged exactly as the POSIX path would be. _Tests are in Task 1 and Task 6._
+4. **A long frame after a backgrounded tab** (delta ≥ 1000 ms): entities must not tunnel through walls and timers must not jump. `clampDt` caps dt at 0.1 s. _Tests are in Task 5._
+5. **Bad scaffold input** (`RPG`, `../x`, `-x`, an unknown owner, a game that already exists): the script refuses with a message, exits 1, and creates no files. _Tests are in Task 6._
 
 ---
 
@@ -60,11 +60,13 @@ Create each branch in a git worktree under `.worktrees/`, which is gitignored (u
 **Branch:** `tooling/root-setup`
 
 **Files:**
+
 - Create: `package.json`, `tsconfig.base.json`, `eslint.config.js`, `.prettierrc`, `.prettierignore`, `.gitignore`, `.gitattributes`, `LICENSE`, `.editorconfig`
 - Create: `scripts/lib/boundaries.mjs`, `scripts/check-boundaries.mjs`
 - Test: `scripts/tests/boundaries.test.mjs`
 
 **Interfaces:**
+
 - Produces: the root scripts `lint`, `format`, `typecheck`, `test` (and later `dev:hub`, `new-game`, `build`, `preview`, `smoke:template`).
 - Produces: `extractSpecifiers(source: string): string[]` and `checkImport(fromFile: string, specifier: string, gameDir: string, isTest: boolean): string | null`. `checkImport` returns an error message or `null`.
 
@@ -115,8 +117,12 @@ test('allowed bare packages', () => {
   expect(checkImport(`${G}/src/a.ts`, 'lodash', G, false)).toMatch(/not allowed/);
 });
 test('Windows paths behave like POSIX paths', () => {
-  expect(checkImport('games\\idham\\rpg\\src\\a.ts', '../logic/x', 'games\\idham\\rpg', false)).toBeNull();
-  expect(checkImport('games\\idham\\rpg\\src\\a.ts', '../../../axhad/x', 'games\\idham\\rpg', false)).toMatch(/outside/);
+  expect(
+    checkImport('games\\idham\\rpg\\src\\a.ts', '../logic/x', 'games\\idham\\rpg', false),
+  ).toBeNull();
+  expect(
+    checkImport('games\\idham\\rpg\\src\\a.ts', '../../../axhad/x', 'games\\idham\\rpg', false),
+  ).toMatch(/outside/);
 });
 test('logic files may not import phaser or shared', () => {
   expect(checkImport(`${G}/src/logic/a.ts`, 'phaser', G, false)).toMatch(/logic/);
@@ -153,11 +159,13 @@ test('logic files may not import phaser or shared', () => {
 **Branch:** `shared/helpers`
 
 **Files:**
+
 - Create: `packages/shared/package.json`, `packages/shared/tsconfig.json`, `packages/shared/README.md`
 - Create: `packages/shared/src/index.ts`, `src/storage.ts`, `src/scale.ts`, `src/input.ts`
 - Test: `packages/shared/tests/storage.test.ts`
 
 **Interfaces:**
+
 - Produces, from `@pixel-arcade/shared`:
   - `highScoreKey(gameId: string): string`
   - `loadHighScore(gameId: string, storage?: KeyValueStore): number`
@@ -178,13 +186,34 @@ test('logic files may not import phaser or shared', () => {
 ```ts
 const mem = (init: Record<string, string> = {}) => {
   const d = { ...init };
-  return { getItem: (k: string) => d[k] ?? null, setItem: (k: string, v: string) => { d[k] = v; }, d };
+  return {
+    getItem: (k: string) => d[k] ?? null,
+    setItem: (k: string, v: string) => {
+      d[k] = v;
+    },
+    d,
+  };
 };
-const throwing = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('quota'); } };
+const throwing = {
+  getItem: () => {
+    throw new Error('denied');
+  },
+  setItem: () => {
+    throw new Error('quota');
+  },
+};
 test('key format', () => expect(highScoreKey('idham-rpg')).toBe('arcade:idham-rpg:highscore'));
 test('missing → 0', () => expect(loadHighScore('g', mem())).toBe(0));
-test.each([['NaN', 0], ['-5', 0], ['1e400', 0], ['abc', 0], ['12.7', 12], ['40', 40]])(
-  'stored %s → %d', (raw, want) => expect(loadHighScore('g', mem({ 'arcade:g:highscore': raw }))).toBe(want));
+test.each([
+  ['NaN', 0],
+  ['-5', 0],
+  ['1e400', 0],
+  ['abc', 0],
+  ['12.7', 12],
+  ['40', 40],
+])('stored %s → %d', (raw, want) =>
+  expect(loadHighScore('g', mem({ 'arcade:g:highscore': raw }))).toBe(want),
+);
 test('throwing storage → 0, save is a no-op', () => {
   expect(loadHighScore('g', throwing)).toBe(0);
   expect(() => saveHighScore('g', 5, throwing)).not.toThrow();
@@ -232,10 +261,12 @@ test('recordScore only saves a new best', () => {
 **Branch:** `tooling/atlas`
 
 **Files:**
+
 - Create: `scripts/lib/atlas.mjs`, `scripts/make-atlas.mjs`
 - Test: `scripts/tests/atlas.test.mjs`
 
 **Interfaces:**
+
 - Produces:
   - `parseSprites(text: string): { palette: Map<string, [r,g,b,a]>, sprites: { name: string, w: number, h: number, rows: string[] }[] }`
   - `packAtlas(sprites, padding = 1): { width: number, height: number, frames: Record<string, {x,y,w,h}> }`
@@ -258,7 +289,7 @@ kyyk
 end
 ```
 
-  Every row of a sprite must have the same width, and every character must be in the palette.
+Every row of a sprite must have the same width, and every character must be in the palette.
 
 - [ ] **Step 1: Write the failing tests.**
   - **parse:** the example above gives 1 sprite (`hero-0`, w=4, h=2) and palette `k` = `[26,28,44,255]`. `.` is `[0,0,0,0]`.
@@ -303,12 +334,14 @@ end
 **Branch:** `hub/launcher`
 
 **Files:**
+
 - Create: `apps/hub/package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`
 - Create: `apps/hub/src/main.ts`, `src/games.ts`, `src/render.ts`, `src/style.css`
 - Test: `apps/hub/tests/games.test.ts`
 - Modify: root `package.json` to add `"dev:hub": "npm run dev -w apps/hub"`
 
 **Interfaces:**
+
 - Produces:
   - `interface GameEntry { id; title; description; author; owner; folder; thumbnailUrl; url }`, with all fields strings
   - `validateGame(raw: unknown, jsonPath: string, thumbs: Record<string, string>, base: string): GameEntry`
@@ -369,6 +402,7 @@ end
 **Branch:** `tooling/template-scaffold`
 
 **Files:**
+
 - Create in `templates/game/`:
   - `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, `game.json`, `README.md`
   - `art/sprites.txt`
@@ -382,11 +416,13 @@ end
 - Generated: `templates/game/public/assets/atlas.{png,json}` and `templates/game/public/thumbnail.png`
 
 **Tokens:** `__OWNER__`, `__NAME__`, `__ID__` (`<owner>-<name>`) and `__TITLE__`.
+
 - They appear in `package.json` (`"name": "@pixel-arcade/__ID__"`), `game.json`, `config/game.ts` (`GAME_ID = '__ID__'`, `TITLE = '__TITLE__'`), `index.html` `<title>`, and `README.md`.
 - `vite.config.ts` contains **no** tokens. It derives `owner` and `name` from its own folder: `const dir = path.dirname(fileURLToPath(import.meta.url)); const [owner, name] = dir.split(path.sep).slice(-2)`.
   - It then sets `base: /pixel-arcade/games/${owner}/${name}/`, `build.outDir: path.resolve(dir, '../../../dist/games', owner, name)`, `emptyOutDir: true` and `chunkSizeWarningLimit: 1600`.
 
 **Interfaces** (pure, in `src/logic/`, shared by every game made from the template):
+
 - `type Vec2 = { x: number; y: number }`
 - `type Rect = { x: number; y: number; w: number; h: number }`
 - `clampDt(deltaMs: number): number`: seconds, capped at 0.1, and never negative.
@@ -458,7 +494,7 @@ end
 - [ ] **Step 6: Verify.**
   - Run: `npx vitest run --root templates/game && npm run lint`
   - Expected: exit 0.
-  - Note: `templates/game/tsconfig.json` extends `../../../tsconfig.base.json`. That path is correct for the depth a game has *after* it is scaffolded (`games/<o>/<g>`), not inside `templates/`. So the template is typechecked through a scaffolded copy by `smoke:template` in Task 7, and Task 7 must not finish until that check passes. Imports of `phaser` and `@pixel-arcade/shared` resolve through the hoisted root `node_modules`.
+  - Note: `templates/game/tsconfig.json` extends `../../../tsconfig.base.json`. That path is correct for the depth a game has _after_ it is scaffolded (`games/<o>/<g>`), not inside `templates/`. So the template is typechecked through a scaffolded copy by `smoke:template` in Task 7, and Task 7 must not finish until that check passes. Imports of `phaser` and `@pixel-arcade/shared` resolve through the hoisted root `node_modules`.
 
 - [ ] **Step 7: Commit.** Message: `feat(template): starter game with tested logic and four scenes`. Commit the generated PNG and JSON assets too.
 
@@ -469,12 +505,14 @@ end
 **Branch:** `tooling/template-scaffold`
 
 **Files:**
+
 - Create: `scripts/lib/scaffold.mjs`, `scripts/new-game.mjs`
 - Test: `scripts/tests/scaffold.test.mjs`
 - Create: `games/idham/.gitkeep`, `games/axhad/.gitkeep`. The owner folders must exist before the scaffold will accept an owner.
 - Modify: root `package.json` to add `"new-game": "node scripts/new-game.mjs"`
 
 **Interfaces:**
+
 - Produces:
   - `validateName(name: string): string | null`: returns an error message or `null`. The pattern is `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`.
   - `toTitle(name: string): string`: e.g. `'space-dodge'` → `'Space Dodge'`.
@@ -526,6 +564,7 @@ end
 **Branch:** `tooling/template-scaffold`
 
 **Files:**
+
 - Create: `scripts/lib/sizes.mjs`, `scripts/build-all.mjs`, `scripts/preview.config.mjs`, `scripts/smoke-template.mjs`
 - Test: `scripts/tests/sizes.test.mjs`
 - Modify: root `package.json` to add:
@@ -534,6 +573,7 @@ end
   - `"smoke:template": "node scripts/smoke-template.mjs"`
 
 **Interfaces:**
+
 - Produces:
   - `formatBytes(n: number): string`: `512` → `'512 B'`, `2048` → `'2.0 KB'`, `1572864` → `'1.50 MB'`.
   - `measureDir(dir): { raw: number; gzip: number }`: sums file sizes, with gzip computed by `zlib.gzipSync` per file.
@@ -583,11 +623,13 @@ end
 **Branch:** `game/idham-rpg/placeholder`
 
 **Files:**
+
 - Generate: run `npm run new-game -- idham rpg`, then `npm install`. In `game.json` and `config/game.ts`, set the title to "Pixel Quest" and write the description.
 - Create in `games/idham/rpg/src/logic/`: `score.ts`, `spawn.ts`, `difficulty.ts`, `health.ts`, `ai.ts`
 - Test: `games/idham/rpg/tests/` has one file per module
 
 **Interfaces** (the values are pinned by the tests):
+
 - `TILE = 16`. The room is 20×11 tiles.
 - `type Tile = { col: number; row: number }`. Walkable interior tiles are col 1..18 and row 1..9.
 - `COIN_VALUE = 10`, `MAX_COINS = 3`, `MAX_SLIMES = 8`.
@@ -648,10 +690,12 @@ end
 **Branch:** `game/idham-rpg/placeholder`
 
 **Files:**
+
 - Modify: `games/idham/rpg/art/sprites.txt`, `src/scenes/PlayScene.ts`, `src/scenes/MenuScene.ts`, `src/config/game.ts`, `README.md`
 - Create: `games/idham/rpg/src/entities/hero.ts`, `entities/slime.ts`, `entities/coin.ts`, `systems/room.ts`
 
 **Interfaces:**
+
 - Consumes everything from Task 8, plus the shared and template exports.
 
 - [ ] **Step 1: Write the art and regenerate the atlas.**
@@ -693,11 +737,13 @@ end
 **Branch:** `game/axhad-fighter/placeholder`
 
 **Files:**
+
 - Generate: run `npm run new-game -- axhad fighter`, then `npm install`. Set the title to "Pixel Brawl", the author to `axhad` and write the description.
 - Create in `games/axhad/fighter/src/logic/`: `combat.ts`, `punch.ts`, `match.ts`, `cpu.ts`, `score.ts`
 - Test: `games/axhad/fighter/tests/` has one file per module
 
 **Interfaces** (the values are pinned by the tests):
+
 - **Constants:** `MAX_HP = 100`, `PUNCH_DAMAGE = 10`, `CHIP_RATIO = 0.2`, `ROUND_TIME = 60`, `WINS_NEEDED = 2`, `PUNCH_RANGE = 28`, `BODY = { w: 24, h: 40 }`.
 - **Combat:** `resolveHit(defenderHp: number, blocking: boolean): { hp: number; dealt: number }`
   - an unblocked hit deals 10; a blocked hit deals 2.
@@ -770,10 +816,12 @@ end
 **Branch:** `game/axhad-fighter/placeholder`
 
 **Files:**
+
 - Modify: `games/axhad/fighter/art/sprites.txt`, `src/scenes/PlayScene.ts`, `MenuScene.ts`, `GameOverScene.ts`, `README.md`
 - Create: `games/axhad/fighter/src/entities/fighter.ts`, `entities/spark.ts`, `systems/hud.ts`
 
 **Interfaces:**
+
 - Consumes Task 10.
 - GameOver init data is extended to `{ score: number; won: boolean }`.
 
@@ -822,6 +870,7 @@ end
 **Branch:** `tooling/github-docs`
 
 **Files:**
+
 - Create in `.github/`:
   - `CODEOWNERS` (copy §12 exactly, one path per line)
   - `workflows/ci.yml`, `workflows/deploy.yml`
@@ -871,6 +920,7 @@ end
 **Branch:** `tooling/github-docs`
 
 **Files:**
+
 - Create: `README.md`, `CONTRIBUTING.md`, `docs/github-settings-checklist.md`
 - Create: `games/idham/README.md` ("Games by idham") and `games/axhad/README.md`, replacing the `.gitkeep` files. Deleting `.gitkeep` is part of this task; the owner folders then stay non-empty.
 
@@ -921,6 +971,6 @@ npm run dev:hub        # starts; cards show thumbnails
 npm run dev -w games/idham/rpg ; npm run dev -w games/axhad/fighter   # each starts
 ```
 
-  Expected: every command exits 0, the preview click-through works, and `git status` is clean apart from intended changes.
+Expected: every command exits 0, the preview click-through works, and `git status` is clean apart from intended changes.
 
 - [ ] **Step 5: Commit.** Message: `docs: README, CONTRIBUTING, GitHub settings checklist`. Then request a code review (superpowers:requesting-code-review), fix any findings, and merge to `main` via superpowers:finishing-a-development-branch.
