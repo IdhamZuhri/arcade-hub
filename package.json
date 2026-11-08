@@ -16,7 +16,10 @@
     "dev:hub": "npm run dev -w apps/hub",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "vitest run --dir scripts && npm run test --workspaces --if-present"
+    "test": "vitest run --dir scripts && npm run test --workspaces --if-present",
+    "build": "node scripts/build-all.mjs",
+    "preview": "vite preview --config scripts/preview.config.mjs",
+    "smoke:template": "node scripts/smoke-template.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
