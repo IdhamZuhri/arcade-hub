@@ -15,6 +15,9 @@ function* tsFiles(dir) {
 }
 
 function* gameDirs() {
+  // The template is checked as a game of its own, so a bad import is caught before scaffolding.
+  const template = path.join(root, 'templates', 'game');
+  if (fs.existsSync(path.join(template, 'package.json'))) yield template;
   const gamesRoot = path.join(root, 'games');
   if (!fs.existsSync(gamesRoot)) return;
   for (const owner of fs.readdirSync(gamesRoot, { withFileTypes: true })) {
