@@ -14,3 +14,7 @@ export const ROOM_ROWS = 11;
 export const COIN_VALUE = 10;
 export const MAX_COINS = 3;
 export const MAX_SLIMES = 8;
+export const HERO_SPEED = 80;
+export const START_HEARTS = 3;
+export const HERO_HIT = 10;
+export const SLIME_REPICK = 1.5;

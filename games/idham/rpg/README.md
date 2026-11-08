@@ -1,10 +1,12 @@
-# Rpg
+# Pixel Quest
 
 A pixel arcade game by idham (`idham-rpg`).
 
 ## Controls
 
-- Move: arrow keys or WASD (touch d-pad on touch devices)
+- Move: arrow keys or WASD (touch d-pad bottom-left on touch devices)
+- Goal: collect coins (10 points each) and avoid slimes; you have 3 hearts
+- Slimes wander at first, then chase after 30 s and get faster
 - Start / play again: SPACE, ENTER or tap
 - Menu from game over: M
 
@@ -24,5 +26,6 @@ npm run art -w games/idham/rpg
 - `src/config/game.ts`: id, title, size, scene keys
 - `src/logic/`: pure, tested logic (no Phaser)
 - `src/scenes/`: Preload, Menu, Play, GameOver
-- `src/systems/`: thin Phaser glue for input and sprites
+- `src/entities/`: Phaser sprites for hero, slime, coin
+- `src/systems/`: input, sprite sync and room building
 - `tests/`: Vitest tests for `src/logic/`
