@@ -1,10 +1,17 @@
 import Phaser from 'phaser';
 import { addTouchButton, isTouchDevice, type TouchButton } from '@pixel-arcade/shared';
-import { BODY, SCENES, WIDTH } from '../config/game';
-import { separate } from '../logic/arena';
-import { resolveHit } from '../logic/combat';
-import { overlaps } from '../logic/collision';
+import { GROUND_Y, SCENES, WIDTH } from '../config/game';
 import { decideCpu, reactionTime, type CpuAction } from '../logic/cpu';
+import { World } from '../logic/ecs';
+import {
+  fistRect,
+  isPunching,
+  landHit,
+  resetFighter,
+  settle,
+  stepFighter,
+  type FighterInput,
+} from '../logic/fighter';
 import {
   applyRound,
   newMatch,
@@ -17,9 +24,12 @@ import { clampDt } from '../logic/movement';
 import { mulberry32 } from '../logic/rng';
 import { isThreatening } from '../logic/punch';
 import { matchScore } from '../logic/score';
-import { Fighter, GROUND_Y, type FighterInput } from '../entities/fighter';
-import { SparkPool } from '../entities/spark';
+import { ageSpark, sparkFrame } from '../logic/spark';
+import { drawFighter, spawnFighter, type FighterEntity } from '../entities/fighter';
+import { removeSpark, spawnSpark } from '../entities/spark';
 import { Hud } from '../systems/hud';
+import { readDirection } from '../systems/input';
+import { syncSprites } from '../systems/sprites';
 
 const BANNER_SECONDS = 1.5;
 
@@ -32,9 +42,11 @@ interface TouchControls {
 
 export class PlayScene extends Phaser.Scene {
   private match: MatchState = newMatch();
-  private p1!: Fighter;
-  private p2!: Fighter;
-  private sparks!: SparkPool;
+  private world = new World();
+  private sprites = new Map<number, Phaser.GameObjects.Sprite>();
+  private p1!: FighterEntity;
+  private p2!: FighterEntity;
+  private sparks!: Phaser.GameObjects.Group;
   private hud!: Hud;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys!: Record<'A' | 'D' | 'J' | 'K', Phaser.Input.Keyboard.Key>;
@@ -54,6 +66,8 @@ export class PlayScene extends Phaser.Scene {
 
   create(): void {
     this.match = newMatch();
+    this.world = new World();
+    this.sprites = new Map();
     this.rand = mulberry32(Date.now());
     this.cpuTimer = 0;
     this.cpuAction = 'idle';
@@ -65,9 +79,10 @@ export class PlayScene extends Phaser.Scene {
 
     this.add.rectangle(0, GROUND_Y, WIDTH, 30, 0x1a1c2c).setOrigin(0);
     this.add.image(0, GROUND_Y, 'atlas', 'ground').setOrigin(0).setScale(1, 2);
-    this.p1 = new Fighter(this, 'p1', 80, 1);
-    this.p2 = new Fighter(this, 'p2', 216, -1);
-    this.sparks = new SparkPool(this);
+    this.p1 = spawnFighter(this, this.world, this.sprites, 'p1', 80, 1);
+    this.p2 = spawnFighter(this, this.world, this.sprites, 'p2', 216, -1);
+    // Pooled hit sparks: a 6-sprite group that recycles dead sparks.
+    this.sparks = this.add.group({ maxSize: 6 });
     this.hud = new Hud(this);
 
     const kb = this.input.keyboard!;
@@ -90,7 +105,7 @@ export class PlayScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const dt = clampDt(delta);
-    this.sparks.update(dt);
+    this.updateSparks(dt);
 
     if (this.bannerLeft > 0) {
       // Input, CPU and timer are frozen while a banner is up; discard queued key presses.
@@ -107,35 +122,54 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.match = tickTimer(this.match, dt);
-    this.p1.update(dt, this.readPlayer());
-    this.p2.update(dt, this.readCpu(dt));
-
-    const sep = separate(this.p1.x, this.p2.x, BODY.w);
-    this.p1.x = sep.a;
-    this.p2.x = sep.b;
-    this.p1.facing = this.p1.x <= this.p2.x ? 1 : -1;
-    this.p2.facing = this.p1.facing === 1 ? -1 : 1;
+    stepFighter(this.p1.c, dt, this.readPlayer());
+    stepFighter(this.p2.c, dt, this.readCpu(dt));
+    settle(this.p1.c, this.p2.c);
 
     this.tryLand(this.p1, this.p2);
     this.tryLand(this.p2, this.p1);
 
-    this.p1.syncSprite();
-    this.p2.syncSprite();
-    this.hud.update(this.match, this.p1.hp, this.p2.hp);
+    this.drawFighters();
+    this.hud.update(this.match, this.p1.c.health.hp, this.p2.c.health.hp);
 
-    const result = roundResult(this.p1.hp, this.p2.hp, this.match.timeLeft);
+    const result = roundResult(this.p1.c.health.hp, this.p2.c.health.hp, this.match.timeLeft);
     if (result) this.endRound(result);
   }
 
+  private updateSparks(dt: number): void {
+    for (const s of this.world.query('spark')) {
+      const age = ageSpark(s.c.spark.age, dt);
+      if (age === null) {
+        removeSpark(this.world, this.sprites, this.sparks, s.id);
+        continue;
+      }
+      s.c.spark.age = age;
+      this.sprites.get(s.id)?.setFrame(sparkFrame(age));
+    }
+  }
+
+  private drawFighters(): void {
+    syncSprites(this.world, this.sprites);
+    drawFighter(this.sprites.get(this.p1.id), this.p1.c);
+    drawFighter(this.sprites.get(this.p2.id), this.p2.c);
+  }
+
   private readPlayer(): FighterInput {
-    const left = this.cursors.left.isDown || this.keys.A.isDown || !!this.touch?.left.isDown;
-    const right = this.cursors.right.isDown || this.keys.D.isDown || !!this.touch?.right.isDown;
+    const { dx } = readDirection(
+      {
+        left: this.cursors.left.isDown || this.keys.A.isDown || !!this.touch?.left.isDown,
+        right: this.cursors.right.isDown || this.keys.D.isDown || !!this.touch?.right.isDown,
+        up: false,
+        down: false,
+      },
+      null,
+    );
     const touchPunch = !!this.touch?.punch.isDown;
     const punch =
       Phaser.Input.Keyboard.JustDown(this.keys.J) || (touchPunch && !this.touchPunchWasDown);
     this.touchPunchWasDown = touchPunch;
     return {
-      move: (Number(right) - Number(left)) as -1 | 0 | 1,
+      move: dx,
       punch,
       block: this.keys.K.isDown || !!this.touch?.block.isDown,
     };
@@ -143,22 +177,24 @@ export class PlayScene extends Phaser.Scene {
 
   private readCpu(dt: number): FighterInput {
     const level = this.match.round;
+    const p1 = this.p1.c;
+    const p2 = this.p2.c;
     this.cpuTimer -= dt;
     let punch = false;
     if (this.cpuTimer <= 0) {
       this.cpuTimer = reactionTime(level);
       this.cpuAction = decideCpu(
         {
-          distance: Math.abs(this.p1.x - this.p2.x),
-          playerPunching: isThreatening(this.p1.punchT),
-          canAct: !this.p2.punching,
+          distance: Math.abs(p1.position.x - p2.position.x),
+          playerPunching: isThreatening(p1.punchT),
+          canAct: !isPunching(p2),
         },
         this.rand,
         level,
       );
       punch = this.cpuAction === 'punch';
     }
-    const toward = (this.p1.x < this.p2.x ? -1 : 1) as -1 | 1;
+    const toward = (p1.position.x < p2.position.x ? -1 : 1) as -1 | 1;
     return {
       move: this.cpuAction === 'approach' ? toward : 0,
       punch,
@@ -166,23 +202,23 @@ export class PlayScene extends Phaser.Scene {
     };
   }
 
-  private tryLand(attacker: Fighter, defender: Fighter): void {
-    if (!attacker.canLandPunch || !overlaps(attacker.hitbox, defender.body)) return;
-    attacker.alreadyHit = true;
-    const { hp, dealt } = resolveHit(defender.hp, defender.blocking);
-    defender.hp = hp;
+  private tryLand(attacker: FighterEntity, defender: FighterEntity): void {
+    const dealt = landHit(attacker.c, defender.c);
+    if (dealt === null) return;
     if (attacker === this.p1) this.damageDealt += dealt;
-    const box = attacker.hitbox;
-    this.sparks.spawn(box.x + box.w / 2, box.y + box.h / 2);
+    const box = fistRect(attacker.c);
+    spawnSpark(this.world, this.sprites, this.sparks, box.x + box.w / 2, box.y + box.h / 2);
   }
 
   private endRound(result: RoundWinner): void {
+    const p1Hp = this.p1.c.health.hp;
+    const p2Hp = this.p2.c.health.hp;
     if (result === 'p1') this.wonRoundTimeLeft.push(this.match.timeLeft);
-    const timedOut = this.p1.hp > 0 && this.p2.hp > 0;
+    const timedOut = p1Hp > 0 && p2Hp > 0;
     const ended = this.match;
     this.match = applyRound(this.match, result);
     // Show the new win pips but keep the ended round's timer until the reset.
-    this.hud.update({ ...this.match, timeLeft: ended.timeLeft }, this.p1.hp, this.p2.hp);
+    this.hud.update({ ...this.match, timeLeft: ended.timeLeft }, p1Hp, p2Hp);
     // applyRound is unguarded after `over`; the banner callback is the only way forward.
     this.startBanner(timedOut ? 'TIME' : 'KO', () => {
       if (this.match.over) {
@@ -192,11 +228,12 @@ export class PlayScene extends Phaser.Scene {
         });
         return;
       }
-      this.p1.reset();
-      this.p2.reset();
+      resetFighter(this.p1.c);
+      resetFighter(this.p2.c);
+      this.drawFighters();
       this.cpuTimer = 0;
       this.cpuAction = 'idle';
-      this.hud.update(this.match, this.p1.hp, this.p2.hp);
+      this.hud.update(this.match, this.p1.c.health.hp, this.p2.c.health.hp);
       this.startBanner(`ROUND ${this.match.round}`, null);
     });
   }

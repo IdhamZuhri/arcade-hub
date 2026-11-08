@@ -2,7 +2,7 @@
 
 Manual steps to do once on GitHub, in order. The site URL will be `https://<OWNER_USERNAME>.github.io/pixel-arcade/`.
 
-- [ ] **1. Create the repo.** Create a public repository named exactly `pixel-arcade` (the base path depends on it). Before pushing, replace `@OWNER_USERNAME` (idham) and `@BROTHER_USERNAME` (axhad) with real usernames. They appear only in `.github/CODEOWNERS`. A missing user makes CODEOWNERS invalid, so the code-owner rule would not work. Make sure `package-lock.json` is committed. Push `main`.
+- [ ] **1. Create the repo.** Create a public repository named exactly `pixel-arcade` (the base path depends on it). Before pushing, replace `@OWNER_USERNAME` (idham) and `@BROTHER_USERNAME` (axhad) with real usernames. They appear only in `.github/CODEOWNERS`. A missing user makes CODEOWNERS invalid, so the code-owner rule would not work. Keep `package-lock.json` committed (update it whenever you `npm install`). Push `main`.
 - [ ] **2. Collaborators.** Settings → Collaborators → add axhad with **Write**. Everyone else stays Read and contributes through forks.
 - [ ] **3. Labels.** Issues → Labels → New label: create `bug`, `enhancement` and `new-game`. The issue forms reference them.
 - [ ] **4. Ruleset for `main`.** Settings → Rules → Rulesets → New ruleset → New branch ruleset. Name it `main`, set enforcement to Active and target the default branch. Enable:

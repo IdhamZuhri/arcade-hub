@@ -1,23 +1,38 @@
-import Phaser from 'phaser';
-import type { Rect } from '../logic/movement';
+import type Phaser from 'phaser';
+import type { World } from '../logic/ecs';
 
-const SPIN = [0, 1, 2, 1] as const;
+const COIN_SIZE = 8;
 
-export class Coin extends Phaser.GameObjects.Sprite {
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'atlas', 'coin-0');
-    this.setOrigin(0).setDepth(3);
-  }
+/** Spawn a coin, reusing a pooled sprite. False if the pool is full. */
+export function spawnCoin(
+  world: World,
+  sprites: Map<number, Phaser.GameObjects.Sprite>,
+  group: Phaser.GameObjects.Group,
+  x: number,
+  y: number,
+): boolean {
+  const sprite = group.get(x, y, 'atlas', 'coin-0') as Phaser.GameObjects.Sprite | null;
+  if (!sprite) return false;
+  sprite.setOrigin(0).setDepth(3).setPosition(x, y).setActive(true).setVisible(true);
+  const e = world.spawn({
+    position: { x, y },
+    size: { x: COIN_SIZE, y: COIN_SIZE },
+    hitbox: { x: 0, y: 0, w: COIN_SIZE, h: COIN_SIZE },
+    coin: true,
+  });
+  sprites.set(e.id, sprite);
+  return true;
+}
 
-  place(x: number, y: number): void {
-    this.setPosition(x, y).setActive(true).setVisible(true);
-  }
-
-  spin(time: number): void {
-    this.setFrame(`coin-${SPIN[Math.floor(time / 150) % SPIN.length]}`);
-  }
-
-  rect(): Rect {
-    return { x: this.x, y: this.y, w: 8, h: 8 };
-  }
+/** Remove a coin entity and return its sprite to the pool. */
+export function removeCoin(
+  world: World,
+  sprites: Map<number, Phaser.GameObjects.Sprite>,
+  group: Phaser.GameObjects.Group,
+  id: number,
+): void {
+  const sprite = sprites.get(id);
+  world.remove(id);
+  sprites.delete(id);
+  if (sprite) group.killAndHide(sprite);
 }

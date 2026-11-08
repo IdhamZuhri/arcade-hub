@@ -1,10 +1,21 @@
-import type { Vec2 } from './movement';
+import type { HeroAnim } from './anim';
+import type { Rect, Vec2 } from './movement';
 
 export interface Components {
   position?: Vec2;
   velocity?: Vec2;
   size?: Vec2;
   health?: { hp: number; max: number };
+  /** Hit area: an offset from `position` plus a width and height. */
+  hitbox?: Rect;
+  /** Hero: seconds of invulnerability left after a hit. */
+  invuln?: number;
+  /** Hero: walk-cycle animation state. */
+  anim?: HeroAnim;
+  /** Slime tag; `repick` is seconds until it picks a new wander heading. */
+  slime?: { repick: number };
+  /** Coin tag. */
+  coin?: true;
 }
 
 export type Entity = { id: number; c: Components };

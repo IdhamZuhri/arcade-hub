@@ -1,21 +1,36 @@
 import Phaser from 'phaser';
 import { addTouchButton, isTouchDevice } from '@pixel-arcade/shared';
 import { MAX_COINS, MAX_SLIMES, SCENES, HEIGHT, START_HEARTS, TILE } from '../config/game';
+import { coinFrame, nextHeroAnim, slimeFrame } from '../logic/anim';
 import { overlaps } from '../logic/collision';
 import { slimeMode, slimeSpeed, spawnInterval } from '../logic/difficulty';
-import { isDead, takeHit, tickHealth } from '../logic/health';
+import { World } from '../logic/ecs';
 import { clampDt } from '../logic/movement';
 import { mulberry32 } from '../logic/rng';
+import {
+  center,
+  heroDead,
+  heroTile,
+  hitHero,
+  hitRect,
+  moveHero,
+  moveSlime,
+  occupiedTile,
+  tickInvuln,
+} from '../logic/rules';
 import { scoreForCoins } from '../logic/score';
 import { pickCoinTile, type Tile } from '../logic/spawn';
-import { Coin } from '../entities/coin';
-import { Hero } from '../entities/hero';
-import { Slime } from '../entities/slime';
+import { removeCoin, spawnCoin } from '../entities/coin';
+import { drawHero, spawnHero, type HeroEntity } from '../entities/hero';
+import { spawnSlime } from '../entities/slime';
 import { readDirection, type DirectionTouch } from '../systems/input';
 import { buildRoom, tileToPixel } from '../systems/room';
+import { syncSprites } from '../systems/sprites';
 
 export class PlayScene extends Phaser.Scene {
-  private hero!: Hero;
+  private world = new World();
+  private sprites = new Map<number, Phaser.GameObjects.Sprite>();
+  private hero!: HeroEntity;
   private coins!: Phaser.GameObjects.Group;
   private slimes!: Phaser.GameObjects.Group;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -33,6 +48,8 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.world = new World();
+    this.sprites = new Map();
     this.rand = mulberry32(Date.now());
     this.t = 0;
     this.collected = 0;
@@ -40,9 +57,9 @@ export class PlayScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor('#1a1c2c');
     buildRoom(this);
-    this.hero = new Hero(this, 10 * TILE - 8, 5 * TILE);
-    this.coins = this.add.group({ classType: Coin, maxSize: MAX_COINS });
-    this.slimes = this.add.group({ classType: Slime, maxSize: MAX_SLIMES });
+    this.hero = spawnHero(this, this.world, this.sprites, 10 * TILE - 8, 5 * TILE);
+    this.coins = this.add.group({ maxSize: MAX_COINS });
+    this.slimes = this.add.group({ maxSize: MAX_SLIMES });
     this.topUpCoins();
 
     this.hearts = [];
@@ -88,16 +105,20 @@ export class PlayScene extends Phaser.Scene {
       },
       this.touch,
     );
-    this.hero.health = tickHealth(this.hero.health, dt);
-    this.hero.move(dx, dy, dt);
+    const hero = this.hero.c;
+    tickInvuln(hero, dt);
+    moveHero(hero, dx, dy, dt);
+    hero.anim = nextHeroAnim(hero.anim, dx, dy, dt);
+    drawHero(this.sprites.get(this.hero.id), hero);
 
     this.updateSlimes(dt, time);
     this.updateCoins(time);
+    syncSprites(this.world, this.sprites);
 
-    this.hearts.forEach((h, i) => h.setVisible(i < this.hero.health.hearts));
+    this.hearts.forEach((h, i) => h.setVisible(i < hero.health.hp));
     this.scoreText.setText(`SCORE ${scoreForCoins(this.collected)}`);
 
-    if (isDead(this.hero.health)) {
+    if (heroDead(hero)) {
       this.scene.start(SCENES.GameOver, { score: scoreForCoins(this.collected) });
     }
   }
@@ -110,22 +131,22 @@ export class PlayScene extends Phaser.Scene {
     }
     const speed = slimeSpeed(this.t);
     const mode = slimeMode(this.t);
-    const target = this.hero.center();
-    const hit = this.hero.hitRect();
-    for (const s of this.slimes.getChildren() as Slime[]) {
-      if (!s.active) continue;
-      s.tick(dt, time, speed, mode, target, this.rand);
-      if (overlaps(hit, s.hitRect())) this.hero.health = takeHit(this.hero.health);
+    const hero = this.hero.c;
+    const target = center(hero);
+    const hit = hitRect(hero);
+    for (const s of this.world.query('slime', 'position', 'velocity', 'size', 'hitbox')) {
+      moveSlime(s.c, dt, speed, mode, target, this.rand);
+      this.sprites.get(s.id)?.setFrame(slimeFrame(time));
+      if (overlaps(hit, hitRect(s.c))) hitHero(hero);
     }
   }
 
   private updateCoins(time: number): void {
-    const hit = this.hero.hitRect();
-    for (const c of this.coins.getChildren() as Coin[]) {
-      if (!c.active) continue;
-      c.spin(time);
-      if (overlaps(hit, c.rect())) {
-        this.coins.killAndHide(c);
+    const hit = hitRect(this.hero.c);
+    for (const coin of this.world.query('coin', 'position', 'hitbox')) {
+      this.sprites.get(coin.id)?.setFrame(coinFrame(time));
+      if (overlaps(hit, hitRect(coin.c))) {
+        removeCoin(this.world, this.sprites, this.coins, coin.id);
         this.collected += 1;
       }
     }
@@ -133,31 +154,24 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private occupiedTiles(): Tile[] {
-    const out: Tile[] = [];
-    for (const g of [this.coins, this.slimes]) {
-      for (const o of g.getChildren() as Phaser.GameObjects.Sprite[]) {
-        if (o.active)
-          out.push({ col: Math.floor((o.x + 4) / TILE), row: Math.floor((o.y + 4) / TILE) });
-      }
-    }
-    return out;
+    return [...this.world.query('coin', 'position'), ...this.world.query('slime', 'position')].map(
+      (e) => occupiedTile(e.c.position),
+    );
   }
 
   private topUpCoins(): void {
-    while (this.coins.countActive(true) < MAX_COINS) {
-      const tile = pickCoinTile(this.rand, this.hero.tile(), this.occupiedTiles());
-      const coin = tile ? (this.coins.get() as Coin | null) : null;
-      if (!tile || !coin) return;
+    while (this.world.query('coin').length < MAX_COINS) {
+      const tile = pickCoinTile(this.rand, heroTile(this.hero.c), this.occupiedTiles());
+      if (!tile) return;
       const p = tileToPixel(tile.col, tile.row);
-      coin.place(p.x + 4, p.y + 4);
+      if (!spawnCoin(this.world, this.sprites, this.coins, p.x + 4, p.y + 4)) return;
     }
   }
 
   private spawnSlime(): void {
-    const tile = pickCoinTile(this.rand, this.hero.tile(), this.occupiedTiles());
-    const slime = tile ? (this.slimes.get() as Slime | null) : null;
-    if (!tile || !slime) return;
+    const tile = pickCoinTile(this.rand, heroTile(this.hero.c), this.occupiedTiles());
+    if (!tile) return;
     const p = tileToPixel(tile.col, tile.row);
-    slime.place(p.x, p.y);
+    spawnSlime(this.world, this.sprites, this.slimes, p.x, p.y);
   }
 }

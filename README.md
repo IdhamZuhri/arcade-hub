@@ -62,7 +62,7 @@ npm install
 npm run dev -w games/<owner>/<name>
 ```
 
-`<owner>` must be an existing folder under `games/` (`idham` or `axhad`), so a typo cannot invent an owner. `<name>` is kebab-case (`[a-z][a-z0-9-]*`). The script refuses if the game already exists. The hub finds the new game on the next build through its `game.json`; no hub edit is needed.
+`<owner>` must be an existing folder under `games/` (`idham` or `axhad`), so a typo cannot invent an owner. `<name>` must match `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`: lowercase letters and digits, starting with a letter, with single hyphens between parts (no leading, trailing or double hyphens). The script refuses if the game already exists. The hub finds the new game on the next build through its `game.json`; no hub edit is needed.
 
 ## Layout
 
@@ -98,7 +98,7 @@ Pushing to `main` runs `.github/workflows/deploy.yml`, which builds and publishe
 ## First-time GitHub setup
 
 1. Replace the username placeholders. `@OWNER_USERNAME` (idham) and `@BROTHER_USERNAME` (axhad) appear in `.github/CODEOWNERS`, the only file that uses them (this README's `<OWNER_USERNAME>` is just documentation). Replace them with the real GitHub usernames. A username that does not exist makes CODEOWNERS invalid, so do this before the branch rules matter.
-2. Commit `package-lock.json`. CI and deploy use `npm ci`, which needs it.
+2. Keep `package-lock.json` committed (update it whenever you `npm install`). CI and deploy use `npm ci`, which needs it.
 3. Follow [docs/github-settings-checklist.md](docs/github-settings-checklist.md) for collaborators, labels, the `main` ruleset and Pages.
 
 ## License

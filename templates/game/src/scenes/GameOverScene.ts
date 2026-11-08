@@ -26,9 +26,13 @@ export class GameOverScene extends Phaser.Scene {
       .text(WIDTH / 2, HEIGHT - 30, 'SPACE / TAP: play again   M: menu', style)
       .setOrigin(0.5);
 
+    // Arm input only after a short grace delay, so a tap still in progress from the
+    // last frame of play cannot skip this screen.
     const again = () => this.scene.start(SCENES.Play);
-    this.input.keyboard?.once('keydown-SPACE', again);
-    this.input.keyboard?.once('keydown-M', () => this.scene.start(SCENES.Menu));
-    this.input.once('pointerdown', again);
+    this.time.delayedCall(400, () => {
+      this.input.keyboard?.once('keydown-SPACE', again);
+      this.input.keyboard?.once('keydown-M', () => this.scene.start(SCENES.Menu));
+      this.input.once('pointerdown', again);
+    });
   }
 }

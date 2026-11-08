@@ -1,33 +1,30 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
+import type { World } from '../logic/ecs';
 
-const LIFETIME = 0.18;
+/** Spawn a hit spark, reusing a pooled sprite. Does nothing if the pool is full. */
+export function spawnSpark(
+  world: World,
+  sprites: Map<number, Phaser.GameObjects.Sprite>,
+  group: Phaser.GameObjects.Group,
+  x: number,
+  y: number,
+): void {
+  const s = group.get(x, y, 'atlas', 'spark-0') as Phaser.GameObjects.Sprite | null;
+  if (!s) return;
+  s.setPosition(x, y).setDepth(5).setFrame('spark-0').setActive(true).setVisible(true);
+  const e = world.spawn({ position: { x, y }, spark: { age: 0 } });
+  sprites.set(e.id, s);
+}
 
-/** Pooled hit sparks: a 6-sprite group that recycles dead sparks. */
-export class SparkPool {
-  private readonly group: Phaser.GameObjects.Group;
-  private readonly age = new WeakMap<Phaser.GameObjects.GameObject, number>();
-
-  constructor(scene: Phaser.Scene) {
-    this.group = scene.add.group({ maxSize: 6 });
-  }
-
-  spawn(x: number, y: number): void {
-    const s = this.group.get(x, y, 'atlas', 'spark-0') as Phaser.GameObjects.Sprite | null;
-    if (!s) return;
-    s.setPosition(x, y).setDepth(5).setFrame('spark-0').setActive(true).setVisible(true);
-    this.age.set(s, 0);
-  }
-
-  update(dt: number): void {
-    for (const s of this.group.getChildren() as Phaser.GameObjects.Sprite[]) {
-      if (!s.active) continue;
-      const t = (this.age.get(s) ?? 0) + dt;
-      if (t >= LIFETIME) {
-        this.group.killAndHide(s);
-        continue;
-      }
-      this.age.set(s, t);
-      s.setFrame(`spark-${Math.min(2, Math.floor((t / LIFETIME) * 3))}`);
-    }
-  }
+/** Remove a spark entity and return its sprite to the pool. */
+export function removeSpark(
+  world: World,
+  sprites: Map<number, Phaser.GameObjects.Sprite>,
+  group: Phaser.GameObjects.Group,
+  id: number,
+): void {
+  const sprite = sprites.get(id);
+  world.remove(id);
+  sprites.delete(id);
+  if (sprite) group.killAndHide(sprite);
 }

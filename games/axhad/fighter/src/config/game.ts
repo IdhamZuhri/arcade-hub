@@ -16,3 +16,5 @@ export const ROUND_TIME = 60;
 export const WINS_NEEDED = 2;
 export const PUNCH_RANGE = 28;
 export const BODY = { w: 24, h: 40 } as const;
+export const GROUND_Y = 150;
+export const WALK_SPEED = 70;
