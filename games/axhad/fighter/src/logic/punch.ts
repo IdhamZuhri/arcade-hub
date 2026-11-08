@@ -17,3 +17,10 @@ export function punchHitbox(x: number, y: number, facing: 1 | -1): Rect {
 export function canLand(phase: PunchPhase, alreadyHit: boolean): boolean {
   return phase === 'active' && !alreadyHit;
 }
+
+/** True while a punch can still hurt: startup or active, not recovery. */
+export function isThreatening(punchT: number): boolean {
+  if (punchT < 0) return false;
+  const phase = punchPhase(punchT);
+  return phase === 'startup' || phase === 'active';
+}

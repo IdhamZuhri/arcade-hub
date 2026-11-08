@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { punchPhase, punchHitbox, canLand } from '../src/logic/punch';
+import { punchPhase, punchHitbox, canLand, isThreatening } from '../src/logic/punch';
 
 test('punchPhase', () => {
   expect(punchPhase(0)).toBe('startup');
@@ -18,4 +18,11 @@ test('canLand', () => {
 test('punchHitbox', () => {
   expect(punchHitbox(100, 50, 1)).toEqual({ x: 124, y: 60, w: 16, h: 8 });
   expect(punchHitbox(100, 50, -1)).toEqual({ x: 84, y: 60, w: 16, h: 8 });
+});
+
+test('isThreatening is false when idle and during recovery', () => {
+  expect(isThreatening(-1)).toBe(false);
+  expect(isThreatening(0.05)).toBe(true);
+  expect(isThreatening(0.15)).toBe(true);
+  expect(isThreatening(0.25)).toBe(false);
 });

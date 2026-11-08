@@ -15,6 +15,7 @@ import {
 } from '../logic/match';
 import { clampDt } from '../logic/movement';
 import { mulberry32 } from '../logic/rng';
+import { isThreatening } from '../logic/punch';
 import { matchScore } from '../logic/score';
 import { Fighter, GROUND_Y, type FighterInput } from '../entities/fighter';
 import { SparkPool } from '../entities/spark';
@@ -92,7 +93,9 @@ export class PlayScene extends Phaser.Scene {
     this.sparks.update(dt);
 
     if (this.bannerLeft > 0) {
-      // Input, CPU and timer are frozen while a banner is up.
+      // Input, CPU and timer are frozen while a banner is up; discard queued key presses.
+      Phaser.Input.Keyboard.JustDown(this.keys.J);
+      this.touchPunchWasDown = !!this.touch?.punch.isDown;
       this.bannerLeft -= dt;
       if (this.bannerLeft <= 0) {
         this.hud.hideBanner();
@@ -147,7 +150,7 @@ export class PlayScene extends Phaser.Scene {
       this.cpuAction = decideCpu(
         {
           distance: Math.abs(this.p1.x - this.p2.x),
-          playerPunching: this.p1.punching,
+          playerPunching: isThreatening(this.p1.punchT),
           canAct: !this.p2.punching,
         },
         this.rand,
@@ -176,8 +179,10 @@ export class PlayScene extends Phaser.Scene {
   private endRound(result: RoundWinner): void {
     if (result === 'p1') this.wonRoundTimeLeft.push(this.match.timeLeft);
     const timedOut = this.p1.hp > 0 && this.p2.hp > 0;
+    const ended = this.match;
     this.match = applyRound(this.match, result);
-    this.hud.update(this.match, this.p1.hp, this.p2.hp);
+    // Show the new win pips but keep the ended round's timer until the reset.
+    this.hud.update({ ...this.match, timeLeft: ended.timeLeft }, this.p1.hp, this.p2.hp);
     // applyRound is unguarded after `over`; the banner callback is the only way forward.
     this.startBanner(timedOut ? 'TIME' : 'KO', () => {
       if (this.match.over) {
@@ -191,6 +196,7 @@ export class PlayScene extends Phaser.Scene {
       this.p2.reset();
       this.cpuTimer = 0;
       this.cpuAction = 'idle';
+      this.hud.update(this.match, this.p1.hp, this.p2.hp);
       this.startBanner(`ROUND ${this.match.round}`, null);
     });
   }
