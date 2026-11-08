@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in a game or the hub is broken
+labels: [bug]
+body:
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options:
+        - Hub
+        - Pixel Quest (idham-rpg)
+        - Pixel Brawl (axhad-fighter)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open the game\n2. Press ...\n3. See the problem"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      placeholder: Chrome 130 on Windows 11
+    validations:
+      required: true

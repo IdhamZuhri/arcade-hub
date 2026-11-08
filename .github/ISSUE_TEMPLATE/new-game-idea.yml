@@ -1,0 +1,34 @@
+name: New game idea
+description: Pitch a new game for the arcade
+labels: [new-game]
+body:
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options:
+        - idham
+        - axhad
+    validations:
+      required: true
+  - type: input
+    id: genre
+    attributes:
+      label: Genre
+      placeholder: Platformer, puzzle, shooter ...
+    validations:
+      required: true
+  - type: textarea
+    id: pitch
+    attributes:
+      label: Pitch
+      description: What is the game about?
+    validations:
+      required: true
+  - type: textarea
+    id: controls
+    attributes:
+      label: Controls
+      placeholder: Arrow keys to move, Space to jump
+    validations:
+      required: true
