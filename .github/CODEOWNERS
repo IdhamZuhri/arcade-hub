@@ -1,0 +1,14 @@
+# Placeholders: @OWNER_USERNAME is idham (repo owner) and @BROTHER_USERNAME is
+# axhad. Replace both with the real GitHub usernames before enabling code-owner review.
+#
+# idham is also listed on axhad's folder and on shared so that someone other than
+# the author can approve those PRs (approval model C, see spec section 14).
+# Later lines override earlier ones.
+*                   @OWNER_USERNAME
+/games/idham/       @OWNER_USERNAME
+/games/axhad/       @BROTHER_USERNAME @OWNER_USERNAME
+/packages/shared/   @OWNER_USERNAME @BROTHER_USERNAME
+/apps/hub/          @OWNER_USERNAME
+/templates/         @OWNER_USERNAME
+/scripts/           @OWNER_USERNAME
+/.github/           @OWNER_USERNAME
