@@ -1,0 +1,12 @@
+{
+  "name": "@pixel-arcade/hub",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "lint": "eslint . && prettier --check ."
+  }
+}
