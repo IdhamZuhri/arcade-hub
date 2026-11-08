@@ -9,6 +9,7 @@ A public GitHub monorepo that hosts a browser arcade on GitHub Pages. Two siblin
 This first round delivers the skeleton plus one small playable placeholder game per person. The real games are built later, by their owners, outside this scope.
 
 ### Goals
+
 - Hub page at `/pixel-arcade/` that auto-discovers every game and shows a responsive card grid.
 - Two placeholder games, each fully following the per-game architecture rules, playable on desktop and mobile.
 - `npm run new-game -- <owner> <name>` creates a new, working game from a template in seconds.
@@ -17,18 +18,21 @@ This first round delivers the skeleton plus one small playable placeholder game 
 - Contributor docs + a manual GitHub-settings checklist.
 
 ### Non-goals
+
 - Real game content (story, levels, roster, balance). Placeholders only.
 - Shared engine/framework code between games. `packages/shared` stays tiny.
 - Accounts, online leaderboards, backend of any kind.
 - A dev proxy that lets the hub dev server open running games (rejected; see Approaches).
 
 ### Anti-goals (would count as failure even if it "works")
+
 - One person's change can break or block the other person's game build or dev flow.
 - A game importing another game's code.
 - Adding a game requires editing a central list.
 - Recreating an existing commercial game's characters, art, names or look (the fighter is "in the spirit of" Mortal Kombat; everything is original).
 
 ## 2. Constraints (from the owner's spec)
+
 - npm workspaces; Vite + TypeScript (`strict`) in every package; Phaser **3** for games (opt-out only with owner approval).
 - Vitest for pure logic; ESLint + Prettier at root.
 - **No extra runtime dependencies** beyond Phaser without approval. Dev tooling listed in §6 is part of the agreed stack.
@@ -38,20 +42,23 @@ This first round delivers the skeleton plus one small playable placeholder game 
 - Ask before adding dependencies, deleting files, or deviating from the spec.
 
 ## 3. Decisions made in conversation
-| Topic | Decision |
-|---|---|
-| Owner folders | `games/<owner>/<game>/` — owners `idham` and `axhad` (first names, not GitHub usernames, so they never change). **Deviation from the spec's flat `games/<game-name>/`, approved.** |
-| Placeholder games | idham: top-down 2D RPG → `games/idham/rpg/`. axhad: 1v1 fighting game → `games/axhad/fighter/`. |
-| GitHub usernames | Not known yet. Use literal placeholders `@OWNER_USERNAME` (idham) and `@BROTHER_USERNAME` (axhad) everywhere; checklist says where to replace them. |
-| License | MIT, copyright "idham and axhad". |
-| Build approach | Approach 1 (below). |
+
+| Topic             | Decision                                                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Owner folders     | `games/<owner>/<game>/` — owners `idham` and `axhad` (first names, not GitHub usernames, so they never change). **Deviation from the spec's flat `games/<game-name>/`, approved.** |
+| Placeholder games | idham: top-down 2D RPG → `games/idham/rpg/`. axhad: 1v1 fighting game → `games/axhad/fighter/`.                                                                                    |
+| GitHub usernames  | Not known yet. Use literal placeholders `@OWNER_USERNAME` (idham) and `@BROTHER_USERNAME` (axhad) everywhere; checklist says where to replace them.                                |
+| License           | MIT, copyright "idham and axhad".                                                                                                                                                  |
+| Build approach    | Approach 1 (below).                                                                                                                                                                |
 
 ## 4. Approaches considered
-1. **Each package is its own Vite app; a root script stitches outputs into one `dist/`** — *chosen.* Strong isolation (a broken game can't break another's dev server), clean per-game bundle sizes, `npm run dev -w <game>` runs one game. Cost: Phaser is bundled per game (~300 KB gz each, cached per game), and hub "Play" links only work against built games, so full click-through is checked with `npm run preview`.
+
+1. **Each package is its own Vite app; a root script stitches outputs into one `dist/`** — _chosen._ Strong isolation (a broken game can't break another's dev server), clean per-game bundle sizes, `npm run dev -w <game>` runs one game. Cost: Phaser is bundled per game (~300 KB gz each, cached per game), and hub "Play" links only work against built games, so full click-through is checked with `npm run preview`.
 2. **One multi-page Vite app at the root** — rejected. Couples every game to one config; one person's change can break the other's build; murky per-game sizes.
 3. **Approach 1 + dev proxy from hub to running game dev servers** — rejected. Extra config plus a process-manager dev dependency; `npm run preview` covers the same need.
 
 ## 5. Repository layout
+
 ```
 pixel-arcade/
   apps/hub/                      @pixel-arcade/hub
@@ -66,9 +73,11 @@ pixel-arcade/
   package.json  tsconfig.base.json  eslint.config.js  .prettierrc  .gitignore  .gitattributes
   README.md  CONTRIBUTING.md  LICENSE
 ```
+
 Root `package.json` workspaces: `["apps/*", "packages/*", "games/*/*"]`.
 
 ### Per-game package
+
 ```
 games/<owner>/<game>/
   index.html            canvas host + "← Back to arcade" link
@@ -91,6 +100,7 @@ games/<owner>/<game>/
 ```
 
 ## 6. Tooling
+
 - **Dev deps (root):** `typescript`, `vite`, `vitest`, `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-config-prettier`, `globals`, `prettier`. Latest stable versions at install time, pinned by `package-lock.json`.
 - **Runtime dep (each game):** `phaser@^3` (latest 3.x).
 - `tsconfig.base.json`: `strict`, `noUncheckedIndexedAccess`, `moduleResolution: bundler`, `noEmit`. Each package runs `tsc --noEmit`.
@@ -100,7 +110,9 @@ games/<owner>/<game>/
 - `.gitattributes`: `* text=auto eol=lf` (the repo is developed on Windows; CI runs on Linux). PNGs are marked `binary`.
 
 ## 7. Shared package (`@pixel-arcade/shared`)
+
 Kept deliberately small. Every export has a test where it has logic.
+
 - `storage.ts`: `highScoreKey(gameId)` → `"arcade:<gameId>:highscore"`; `loadHighScore(gameId): number` and `saveHighScore(gameId, score): void`, both wrapped in try/catch and returning 0 / no-op on failure or bad data.
 - `scale.ts`: `pixelScaleConfig(width, height)` → a Phaser scale config (FIT, CENTER_BOTH, parent `game`), with `pixelArt: true` settings.
 - `input.ts`: `addTouchButton(scene, opts)` → a small on-screen button exposing `isDown`, built on Phaser pointer events (multi-touch). Shown only when the device has touch (`scene.sys.game.device.input.touch`).
@@ -108,10 +120,18 @@ Kept deliberately small. Every export has a test where it has logic.
 **Builder's call:** the high-score `<gameId>` is `game.json` `id`, which is `<owner>-<game>` (e.g. `arcade:idham-rpg:highscore`), so two owners can each have a "snake" without colliding.
 
 ## 8. game.json and hub discovery
+
 ```json
-{ "id": "idham-rpg", "title": "Pixel Quest", "description": "…", "thumbnail": "public/thumbnail.png",
-  "author": "idham", "owner": "idham" }
+{
+  "id": "idham-rpg",
+  "title": "Pixel Quest",
+  "description": "…",
+  "thumbnail": "public/thumbnail.png",
+  "author": "idham",
+  "owner": "idham"
+}
 ```
+
 - `id` must equal `<owner>-<folder>`, and `owner` must equal the parent folder name.
 - The hub uses `import.meta.glob('../../../games/*/*/game.json', { eager: true })` plus a URL glob over `games/*/*/public/thumbnail.png`, so thumbnails are bundled into the hub and also render in `dev:hub`. A `validateGame()` pure function (tested) checks the required fields and id/folder consistency, and **throws at build time** with a clear message naming the offending file.
 - Card link: `./games/<owner>/<game>/` relative to the hub's base `/pixel-arcade/`.
@@ -119,6 +139,7 @@ Kept deliberately small. Every export has a test where it has logic.
 - Game `index.html` back link: `href="../../../"` (resolves to `/pixel-arcade/` in both the build and preview). In a game's own dev server that link 404s; this is documented.
 
 ## 9. Per-game architecture (template = both placeholders)
+
 - **Scenes:** Preload → Menu → Play → GameOver → (Menu | Play). Preload draws a progress bar from `load.on('progress')`, then loads `assets/atlas.png/json` (Phaser JSON-hash atlas).
 - **Delta time:** every movement uses `dt = delta / 1000` passed into pure functions (`step(pos, vel, dt)`).
 - **Entity-component, lightweight:** an entity is a plain record `{ id, components: { position, velocity, health, hitbox, … } }`, plus an optional sprite reference held by the scene. Systems are functions over entity lists; the pure parts live in `logic/`, the Phaser parts (sprite sync, input) in `systems/`. No ECS library.
@@ -129,6 +150,7 @@ Kept deliberately small. Every export has a test where it has logic.
 - **High score:** via shared `loadHighScore` / `saveHighScore`. Shown on Menu and GameOver; "NEW BEST!" when beaten.
 
 ### 9a. idham/rpg — "Pixel Quest" (placeholder)
+
 - One room: tiled floor, wall border. The hero moves in 8 directions (arrows/WASD; touch: 4-button d-pad bottom-left).
 - Coins spawn at random free tiles, not within 3 tiles of the hero; at most 3 at a time. Each coin is worth +10.
 - Slimes wander (random direction changes) and later chase. One spawns every N seconds; difficulty raises slime speed and spawn rate over time, with caps.
@@ -136,6 +158,7 @@ Kept deliberately small. Every export has a test where it has logic.
 - **Pure logic + tests:** scoring, coin spawn placement (seeded RNG), difficulty curve, AABB overlap, wall clamping, invulnerability timer, pool.
 
 ### 9b. axhad/fighter — "Pixel Brawl" (placeholder)
+
 - Side view, flat stage, two original fighters (palette-swapped). Player vs a simple CPU.
 - Controls: A/D (or arrows) move, J punch, K block; touch: left/right buttons bottom-left, Punch/Block bottom-right.
 - Punch: short startup, an active hitbox, recovery. A blocked hit deals 20% chip damage. 100 HP each; a 60 s round timer; best of 3 rounds; a timeout goes to the fighter with more HP (a draw replays the round).
@@ -144,23 +167,26 @@ Kept deliberately small. Every export has a test where it has logic.
 - **Pure logic + tests:** damage/block calc, hitbox overlap, punch frame timing, round/match state machine, timer/timeout rules, CPU decision (seeded), scoring, pool.
 
 ## 10. Scripts (root package.json)
-| Script | Does |
-|---|---|
-| `dev:hub` | `vite` in apps/hub |
-| `dev -w games/<owner>/<game>` | that game's own Vite dev server (each package defines `dev`) |
-| `new-game -- <owner> <name>` | `scripts/new-game.mjs` (see §11) |
-| `build` | `scripts/build-all.mjs`: delete `dist/`; build hub → `dist/`; build each game workspace (discovered by glob) → `dist/games/<owner>/<game>/`; print a size table (raw + gzip per game, and hub) |
-| `preview` | serve `dist/` at `/pixel-arcade/` via `vite preview` with a config pointing at `dist/` |
-| `lint` | `eslint .` + `prettier --check .` + boundary check |
-| `format` | `prettier --write .` |
-| `typecheck` | `npm run typecheck --workspaces --if-present` |
-| `test` | `npm run test --workspaces --if-present` (`vitest run`) |
-| per-game | `npm run <lint\|typecheck\|test\|build> -w games/<owner>/<game>` |
+
+| Script                        | Does                                                                                                                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev:hub`                     | `vite` in apps/hub                                                                                                                                                                             |
+| `dev -w games/<owner>/<game>` | that game's own Vite dev server (each package defines `dev`)                                                                                                                                   |
+| `new-game -- <owner> <name>`  | `scripts/new-game.mjs` (see §11)                                                                                                                                                               |
+| `build`                       | `scripts/build-all.mjs`: delete `dist/`; build hub → `dist/`; build each game workspace (discovered by glob) → `dist/games/<owner>/<game>/`; print a size table (raw + gzip per game, and hub) |
+| `preview`                     | serve `dist/` at `/pixel-arcade/` via `vite preview` with a config pointing at `dist/`                                                                                                         |
+| `lint`                        | `eslint .` + `prettier --check .` + boundary check                                                                                                                                             |
+| `format`                      | `prettier --write .`                                                                                                                                                                           |
+| `typecheck`                   | `npm run typecheck --workspaces --if-present`                                                                                                                                                  |
+| `test`                        | `npm run test --workspaces --if-present` (`vitest run`)                                                                                                                                        |
+| per-game                      | `npm run <lint\|typecheck\|test\|build> -w games/<owner>/<game>`                                                                                                                               |
 
 If any game build fails, `build-all` exits non-zero, after reporting which one failed.
 
 ## 11. new-game scaffold
+
 `npm run new-game -- <owner> <name>`:
+
 - Validates `name` as kebab-case `[a-z][a-z0-9-]*`, requires `games/<owner>/` to exist (so a typo can't invent a new owner), and refuses if the target exists.
 - Copies `templates/game/` and replaces tokens `__OWNER__`, `__NAME__`, `__ID__`, `__TITLE__` in text files.
 - Prints next steps (`npm install`, then `npm run dev -w games/<owner>/<name>`).
@@ -169,6 +195,7 @@ If any game build fails, `build-all` exits non-zero, after reporting which one f
 - **Builder's call:** CI scaffolds a throwaway game and typechecks/tests it so the template can't rot. It runs as a step in the CI workflow and deletes the game afterwards.
 
 ## 12. GitHub files
+
 - **CODEOWNERS** (placeholders `@OWNER_USERNAME` = idham, `@BROTHER_USERNAME` = axhad; approval model in §14):
   ```
   *                   @OWNER_USERNAME
@@ -184,12 +211,15 @@ If any game build fails, `build-all` exits non-zero, after reporting which one f
 - **ISSUE_TEMPLATE/:** `bug.yml`, `feature.yml`, `new-game-idea.yml` (issue forms), plus `config.yml`.
 
 ## 13. Docs
+
 - **README.md:** what it is, live URL pattern, prerequisites (Node ≥ 22), setup, the scripts table, running one game, adding a game, folder layout, rules, build and preview, deploy, and replacing the username placeholders.
 - **CONTRIBUTING.md:** branch naming `game/<owner>-<game>/<feature>` (adapted from the spec's `game/<game-name>/<feature>` to carry the owner) plus `hub/<feature>`, `shared/<feature>` and `tooling/<feature>`; one game per PR; never edit another person's game folder without asking; how to add a game; how to add an owner; shared-code rules; commit message style.
 - **docs/github-settings-checklist.md:** manual steps: protect `main` (ruleset), require PRs, require code-owner review, require passing CI (`ci` job), block force pushes and deletions, give axhad Write access, outsiders stay Read and contribute via forks, require approval for first-time contributor workflows, set Pages source to GitHub Actions, replace placeholders. It also covers how the approval rules interact for a two-person team (§14).
 
 ## 14. Approval model (decided: option C)
+
 GitHub never lets a PR's author approve their own PR, so a two-person team needs a deliberate model. The owner chose **C: approvals required, repo owner can bypass.**
+
 - The `main` ruleset requires a PR, 1 approval, code-owner review, and the passing `ci` check; it blocks force pushes and deletions.
 - The bypass list contains only the Repository admin role (idham), in **"For pull requests only"** mode. idham still opens PRs (CI runs, history stays clean) but can merge without an approval. The checklist and CONTRIBUTING ask him to wait for green CI before bypassing.
 - axhad has no bypass. His PRs need approval from a code owner other than him; idham is listed on `games/axhad/` and `packages/shared/` for exactly that reason.
@@ -198,9 +228,11 @@ GitHub never lets a PR's author approve their own PR, so a two-person team needs
 - Option A (mutual approval, no bypass) and option B (no approvals required) were considered. A was the recommendation; the owner preferred C for speed on his own work.
 
 ## 14a. Repository bootstrap (builder's call)
+
 No GitHub repo exists yet. Run `git init -b main` locally, commit this spec first, then build each feature on its own branch in a worktree and merge it locally into `main` in order (no PRs, since there's no remote). The owner later creates a GitHub repo named exactly `pixel-arcade` (the base path depends on it) and pushes; `ci.yml` and `deploy.yml` first run then. The checklist includes the first-push and first-deploy verification.
 
 ## 15. Left to the builder
+
 - Exact pixel art, palettes, titles, and copy text.
 - Tuning numbers (speeds, spawn rates, frame data).
 - Internal function signatures and file splits within the structure above.
@@ -208,4 +240,5 @@ No GitHub repo exists yet. Run `git init -b main` locally, commit this spec firs
 - Commit granularity within each feature branch, and the order of worktree branches (proposed: tooling-root → shared → hub → template + scaffold → rpg → fighter → github + docs).
 
 ## 16. Done means
+
 `npm install`, `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` all pass locally, with real output shown. `npm run preview` serves the hub with two cards, each opens its game, and the back link returns to the hub. `npm run dev:hub` and `npm run dev -w games/idham/rpg` / `-w games/axhad/fighter` each start. `new-game` creates a game that passes typecheck and test. README and checklist complete.
