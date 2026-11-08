@@ -14,8 +14,9 @@ export function addTouchButton(
   opts: { x: number; y: number; label: string; radius?: number },
 ): TouchButton {
   const radius = opts.radius ?? 20;
-  // Allow three simultaneous pointers (default is two).
-  scene.input.addPointer(2);
+  // Allow three simultaneous pointers; only top up so restarts don't pile them up.
+  const total = scene.input.manager.pointersTotal;
+  if (total < 3) scene.input.addPointer(3 - total);
 
   const circle = scene.add
     .circle(opts.x, opts.y, radius, 0xffffff, 0.25)
@@ -35,14 +36,29 @@ export function addTouchButton(
   circle.on('pointerup', release);
   circle.on('pointerout', release);
 
+  // pointerout/up on the button can be missed (touch cancel, release off canvas).
+  const clear = (p: Phaser.Input.Pointer) => down.delete(p.id);
+  const clearAll = () => down.clear();
+  scene.input.on('pointerup', clear);
+  scene.input.on('gameout', clearAll);
+
+  let destroyed = false;
+  const destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    down.clear();
+    scene.input.off('pointerup', clear);
+    scene.input.off('gameout', clearAll);
+    scene.events.off('shutdown', destroy);
+    circle.destroy();
+    text.destroy();
+  };
+  scene.events.once('shutdown', destroy);
+
   return {
     get isDown() {
       return down.size > 0;
     },
-    destroy() {
-      down.clear();
-      circle.destroy();
-      text.destroy();
-    },
+    destroy,
   };
 }
