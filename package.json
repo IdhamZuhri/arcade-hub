@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "lint": "eslint . && prettier --check . && node scripts/check-boundaries.mjs",
+    "dev:hub": "npm run dev -w apps/hub",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run --dir scripts && npm run test --workspaces --if-present"

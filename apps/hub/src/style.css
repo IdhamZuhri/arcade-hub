@@ -1,0 +1,65 @@
+:root {
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #14121f;
+  color: #e8e6f0;
+  font-family: ui-monospace, 'Courier New', monospace;
+}
+header,
+main {
+  padding: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+h1 {
+  margin: 0;
+  letter-spacing: 2px;
+}
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: #1f1b33;
+  border: 2px solid #3a3360;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  image-rendering: pixelated;
+  background: #000;
+}
+.card h2,
+.card p {
+  margin: 0;
+}
+.author {
+  color: #9a94bd;
+  font-size: 0.85rem;
+}
+.desc {
+  flex: 1;
+}
+.play {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: #ffd23f;
+  color: #14121f;
+  text-decoration: none;
+  font-weight: bold;
+}
+.empty {
+  grid-column: 1 / -1;
+  color: #9a94bd;
+}
