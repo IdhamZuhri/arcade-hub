@@ -62,7 +62,7 @@ npm install
 npm run dev -w games/<owner>/<name>
 ```
 
-`<owner>` must be an existing folder under `games/` (`idham` or `axhad`), so a typo cannot invent an owner. `<name>` is kebab-case (`[a-z][a-z0-9-]*`). The script refuses if the game already exists. The hub finds the new game on the next build through its `game.json`; no hub edit is needed.
+`<owner>` must be an existing folder under `games/` (`idham` or `axhad`), so a typo cannot invent an owner. `<name>` must match `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`: lowercase letters and digits, starting with a letter, with single hyphens between parts (no leading, trailing or double hyphens). The script refuses if the game already exists. The hub finds the new game on the next build through its `game.json`; no hub edit is needed.
 
 ## Layout
 
