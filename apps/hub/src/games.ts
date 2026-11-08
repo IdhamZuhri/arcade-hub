@@ -10,6 +10,19 @@ export interface GameEntry {
 }
 
 const FIELDS = ['id', 'title', 'description', 'thumbnail', 'author', 'owner'];
+const THUMB_RULE =
+  'thumbnails must be PNG files directly inside public/, e.g. "public/thumbnail.png"';
+
+/** POSIX-normalize a relative path: drop "." and empty segments, resolve "..". */
+function normalizeRel(p: string): string {
+  const out: string[] = [];
+  for (const seg of p.split('/')) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..' && out.length > 0 && out[out.length - 1] !== '..') out.pop();
+    else out.push(seg);
+  }
+  return out.join('/');
+}
 
 export function validateGame(
   raw: unknown,
@@ -44,10 +57,11 @@ export function validateGame(
   if (s('id') !== expectedId) {
     fail(`id "${s('id')}" invalid, expected id "${expectedId}"`);
   }
-  const thumbKey = jsonPath.slice(0, jsonPath.lastIndexOf('/') + 1) + s('thumbnail');
+  const thumbRel = normalizeRel(s('thumbnail'));
+  const thumbKey = jsonPath.slice(0, jsonPath.lastIndexOf('/') + 1) + thumbRel;
   const thumbnailUrl = thumbs[thumbKey];
   if (thumbnailUrl === undefined) {
-    fail(`thumbnail "${s('thumbnail')}" not found`);
+    fail(`thumbnail "${s('thumbnail')}" not found (${THUMB_RULE})`);
   }
 
   return {
@@ -70,4 +84,22 @@ export function discoverGames(
   return Object.entries(modules)
     .map(([path, raw]) => validateGame(raw, path, thumbs, base))
     .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+/** Like discoverGames, but skips entries that fail validation and reports them to onError. */
+export function discoverValidGames(
+  modules: Record<string, unknown>,
+  thumbs: Record<string, string>,
+  base: string,
+  onError: (err: unknown) => void,
+): GameEntry[] {
+  const games: GameEntry[] = [];
+  for (const [path, raw] of Object.entries(modules)) {
+    try {
+      games.push(validateGame(raw, path, thumbs, base));
+    } catch (err) {
+      onError(err);
+    }
+  }
+  return games.sort((a, b) => a.title.localeCompare(b.title));
 }

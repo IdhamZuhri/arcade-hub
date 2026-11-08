@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { discoverGames, validateGame } from '../src/games';
+import { discoverGames, discoverValidGames, validateGame } from '../src/games';
 
 const BASE = '/pixel-arcade/';
 const THUMBS = { '../../../games/idham/rpg/public/thumbnail.png': '/t.png' };
@@ -20,6 +20,20 @@ describe('validateGame', () => {
     expect(e.thumbnailUrl).toBe('/t.png');
     expect(e.folder).toBe('rpg');
     expect(e.title).toBe('Pixel Quest');
+  });
+
+  test('accepts a ./-prefixed thumbnail path', () => {
+    const e = validateGame({ ...valid(), thumbnail: './public/thumbnail.png' }, KEY, THUMBS, BASE);
+    expect(e.thumbnailUrl).toBe('/t.png');
+  });
+
+  test('a missing thumbnail says thumbnails must be PNGs under public/', () => {
+    expect(() =>
+      validateGame({ ...valid(), thumbnail: 'public/nope.png' }, KEY, THUMBS, BASE),
+    ).toThrow('PNG');
+    expect(() => validateGame({ ...valid(), thumbnail: 'thumb.jpg' }, KEY, THUMBS, BASE)).toThrow(
+      'public/',
+    );
   });
 
   const cases: [string, unknown, string?][] = [
@@ -56,5 +70,19 @@ describe('discoverGames', () => {
   });
   test('empty input', () => {
     expect(discoverGames({}, {}, BASE)).toEqual([]);
+  });
+});
+
+describe('discoverValidGames', () => {
+  test('keeps the valid games and reports the bad one', () => {
+    const errors: unknown[] = [];
+    const mods = {
+      [KEY]: valid(),
+      '../../../games/axhad/fighter/game.json': { ...valid(), id: 'nope', owner: 'axhad' },
+    };
+    const games = discoverValidGames(mods, THUMBS, BASE, (e) => errors.push(e));
+    expect(games.map((g) => g.id)).toEqual(['idham-rpg']);
+    expect(errors).toHaveLength(1);
+    expect(String(errors[0])).toContain('games/axhad/fighter/game.json');
   });
 });

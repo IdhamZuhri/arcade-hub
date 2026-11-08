@@ -1,5 +1,5 @@
 import './style.css';
-import { discoverGames } from './games';
+import { discoverValidGames } from './games';
 import { renderGrid } from './render';
 
 const modules = import.meta.glob('../../../games/*/*/game.json', {
@@ -13,4 +13,9 @@ const thumbs = import.meta.glob('../../../games/*/*/public/*.png', {
 }) as Record<string, string>;
 
 const root = document.getElementById('grid');
-if (root) renderGrid(root, discoverGames(modules, thumbs, import.meta.env.BASE_URL));
+// The build already rejects a bad game.json (see vite.config.ts); at runtime, a bad entry
+// is logged and skipped so the other games still render.
+const games = discoverValidGames(modules, thumbs, import.meta.env.BASE_URL, (err) =>
+  console.error(err),
+);
+if (root) renderGrid(root, games);
